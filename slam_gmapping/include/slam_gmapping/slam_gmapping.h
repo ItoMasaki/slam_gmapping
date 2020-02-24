@@ -32,6 +32,7 @@
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/map_meta_data.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -63,6 +64,7 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr entropy_publisher_;
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr sst_;
     rclcpp::Publisher<nav_msgs::msg::MapMetaData>::SharedPtr sstm_;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometry_publisher_;
 
     std::shared_ptr<tf2_ros::Buffer> buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tfl_;
@@ -76,6 +78,8 @@ private:
     // The angles in the laser, going from -x to x (adjustment is made to get the laser between
     // symmetrical bounds as that's what gmapping expects)
     std::vector<double> laser_angles_;
+    // odometry data
+    nav_msgs::msg::Odometry odom_;
     // The pose, in the original laser frame, of the corresponding centered laser with z facing up
     geometry_msgs::msg::PoseStamped centered_laser_pose_;
     // Depending on the order of the elements in the scan and the orientation of the scan frame,

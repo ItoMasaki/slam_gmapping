@@ -92,11 +92,11 @@ void SlamGmapping::init() {
 }
 
 void SlamGmapping::startLiveSlam() {
+    odometry_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("localization", 10);
     entropy_publisher_ = this->create_publisher<std_msgs::msg::Float64>("entropy");
     sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
     sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>("map_metadata");
-    scan_filter_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>
-            (node_, "scan");
+    scan_filter_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(node_, "scan");
     scan_filter_ = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>
             (*scan_filter_sub_, *buffer_, odom_frame_, 10, node_);
     scan_filter_->registerCallback(std::bind(&SlamGmapping::laserCallback, this, std::placeholders::_1));
@@ -146,6 +146,7 @@ bool SlamGmapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const rclcpp:
     gmap_pose = GMapping::OrientedPoint(odom_pose.pose.position.x,
                                         odom_pose.pose.position.y,
                                         yaw);
+
     return true;
 }
 
@@ -341,6 +342,8 @@ bool SlamGmapping::addScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr sca
 
 
 void SlamGmapping::laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) {
+    GMapping::OrientedPoint mpose;
+
     laser_count_++;
     if ((laser_count_ % throttle_scans_) != 0)
         return;
@@ -356,6 +359,19 @@ void SlamGmapping::laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr sca
     }
 
     GMapping::OrientedPoint odom_pose;
+
+    mpose = gsp_->getParticles()[gsp_->getBestParticleIndex()].pose;
+
+    // Odometry using Particle Filter
+    odom_ = nav_msgs::msg::Odometry();
+    odom_.header.frame_id = "map";
+    odom_.header.stamp = get_clock()->now();
+    odom_.pose.pose.position.x = mpose.x;
+    odom_.pose.pose.position.y = mpose.y;
+    odom_.pose.pose.orientation.z = cos(0.0)*cos(0.0)*sin(mpose.theta/2.0) - sin(0.0)*sin(0.0)*cos(mpose.theta/2.0);
+    odom_.pose.pose.orientation.w = cos(0.0)*cos(0.0)*cos(mpose.theta/2.0) + sin(0.0)*sin(0.0)*sin(mpose.theta/2.0);
+
+    odometry_publisher_->publish(odom_);
 
     if(addScan(scan, odom_pose))
     {
