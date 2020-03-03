@@ -93,9 +93,9 @@ void SlamGmapping::init() {
 
 void SlamGmapping::startLiveSlam() {
     odometry_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("localization", 10);
-    entropy_publisher_ = this->create_publisher<std_msgs::msg::Float64>("entropy");
-    sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
-    sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>("map_metadata");
+    entropy_publisher_ = this->create_publisher<std_msgs::msg::Float64>("entropy", 10);
+    sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 10);
+    sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>("map_metadata", 10);
     scan_filter_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(node_, "scan");
     scan_filter_ = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>
             (*scan_filter_sub_, *buffer_, odom_frame_, 10, node_);
